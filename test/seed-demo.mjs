@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {spawn} from 'node:child_process';
+import {Coordinator} from '../lib/engine.js';
+import {runHarness} from '../lib/runner.js';
+const actor=JSON.parse(fs.readFileSync('test-data/native-session.json'));
+const launch=r=>{const c=spawn(r.argv[0],r.argv.slice(1),{cwd:r.cwd,stdio:'pipe',windowsHide:true});const done=new Promise((resolve,reject)=>{c.once('error',reject);c.once('close',(exitCode,signal)=>resolve({exitCode,signal}));});r.signal.addEventListener('abort',()=>c.kill(),{once:true});return {stdin:c.stdin,stdout:c.stdout,stderr:c.stderr,done,stop:async()=>{if(c.exitCode===null)c.kill();await done;}};};
+const e=new Coordinator({dir:'test-data/native-home/coordinator',run:r=>runHarness({launch},r)});const fixture=path.resolve('test/fixture.mjs');
+e.endpoint(actor,{id:'text_fixture',label:'文本接口（隔离测试端）',command:process.execPath,args:[fixture,'text','draft.txt'],protocol:'text'});
+e.endpoint(actor,{id:'acp_fixture',label:'ACP 接口（隔离测试端）',command:process.execPath,args:[fixture,'acp','delivery.txt'],protocol:'acp'});
+e.plan(actor,{title:'隔离演示 · 两步文案协作',tasks:[{id:'draft',title:'整理需求，生成初稿',prompt:'生成测试文本',endpoint:'text_fixture',outputs:['draft.txt'],criteria:['文本含有验收说明'],reason:'模拟已允许的文本调用方式'},{id:'delivery',title:'整合内容，提交成稿',prompt:'生成测试成稿',endpoint:'acp_fixture',dependencies:['draft'],outputs:['delivery.txt'],criteria:['文本含有验收说明'],reason:'模拟另一个协议入口接收已审查的输入'}]});
+await e.control(actor,'resume');const s=e.state.sessions[actor.id];const until=async id=>{for(let i=0;i<200;i++){const t=s.tasks.find(t=>t.id===id);if(t.status==='awaiting_review')return t;await new Promise(r=>setTimeout(r,25));}throw Error('演示超时');};
+const draft=await until('draft');e.read(actor,{id:'draft',relative:'draft.txt'});e.review(actor,{id:'draft',revision:draft.revision,version:draft.result.version,verdict:'pass',checks:[{criterion:draft.criteria[0],status:'pass',evidence:'测试驱动读取了实际文本文件，含“验收”文字。此记录用于演示，不代表真实模型审查。'}],note:'隔离测试驱动已核对文件，演示审查通过状态。'});await until('delivery');await e.close();s.pendingEvents=[];e.save();console.log('演示产物和状态已写入隔离 profile，未接入真实 Harness。');

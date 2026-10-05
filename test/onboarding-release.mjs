@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {check,prepare} from '../scripts/agent-install.mjs';
+import {sha256} from '../scripts/archive.mjs';
+const release=JSON.parse(fs.readFileSync(path.resolve('dist/agent-install.json'),'utf8'));
+const root=path.resolve('test-data','onboarding-release-'+Date.now()),home=path.join(root,'home'),profile=path.join(home,'profiles','desktop');fs.mkdirSync(profile,{recursive:true});
+const oldName='dsh-cross-harness-coordinator-v0-1-10',oldPackage=path.join(profile,'node_modules',oldName);fs.mkdirSync(oldPackage,{recursive:true});
+fs.writeFileSync(path.join(oldPackage,'package.json'),JSON.stringify({name:oldName,version:'0.1.10',dshCoordinator:{canonicalName:'dsh-cross-harness-coordinator'}}));
+fs.writeFileSync(path.join(profile,'package.json'),JSON.stringify({dependencies:{[oldName]:'fixture'},dsh:{profile:{bundles:[oldName]}}}));
+const state=path.join(home,'storages','cross-harness-coordinator');fs.mkdirSync(state,{recursive:true});fs.writeFileSync(path.join(state,'state.json'),JSON.stringify({schema:1,sessions:{},endpoints:{probe:{id:'probe',owner:'owner',connection:{state:'checking'}}},events:[]}));
+const cliRoot=path.join(root,'fixture-cli');fs.mkdirSync(path.join(cliRoot,'lib'),{recursive:true});fs.writeFileSync(path.join(cliRoot,'package.json'),JSON.stringify({version:release.runtimeVersion}));
+const body=Buffer.from(JSON.stringify({version:release.runtimeVersion}));const header=Buffer.from(JSON.stringify({files:{'package.json':{size:body.length,offset:'0'}}}));const size=header.length+8;const asar=Buffer.alloc(8+size+body.length);asar.writeUInt32LE(size,4);asar.writeUInt32LE(header.length,12);header.copy(asar,16);body.copy(asar,8+size);const asarFile=path.join(root,'fixture-app.asar');fs.writeFileSync(asarFile,asar);
+const releaseFile=path.join(root,'fixture-release.json');fs.writeFileSync(releaseFile,JSON.stringify({...release,defaults:{...release.defaults,home,cli:path.join(cliRoot,'lib','bin.js'),asar:asarFile}}));
+const checked=check({home,profile:'desktop',release:releaseFile});assert.equal(checked.pendingConnections.length,1);const backupRoot=path.join(root,'backups');assert.throws(()=>prepare({home,profile:'desktop',backupRoot,release:releaseFile}),/协议连接检查尚未空闲/);assert.equal(fs.existsSync(backupRoot),false);
+for(const [file,digest]of Object.entries(checked.hashes))assert.equal(sha256(fs.readFileSync(path.resolve(file))),digest,'发布源码不一致：'+file);
+const result={passed:true,version:checked.release.version,archive:checked.release.archive,sha256:checked.release.sha256,sourceFilesVerified:Object.keys(checked.hashes).length,fixtureInstalledVersion:checked.installedVersion,productionModified:false,coverage:['发布包及文件清单完整性','包内源码文件对应发布哈希','ACP检查进行中禁止升级准备'],root};fs.writeFileSync(path.join(root,'result.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
