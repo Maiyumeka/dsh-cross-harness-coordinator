@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const root=path.resolve(import.meta.dirname,'..'),pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json')));
+if(!/^\d+\.\d+\.\d+$/.test(pkg.version))throw Error('发布版本无效');
+const canonicalName='dsh-cross-harness-coordinator',lib=path.join(root,'lib');
+pkg.name=canonicalName+'-v'+pkg.version.replaceAll('.','-');
+pkg.dshCoordinator={canonicalName};
+fs.writeFileSync(path.join(lib,'version.mjs'),`export const VERSION=${JSON.stringify(pkg.version)};\n`);
+for(const key of Object.keys(pkg.exports))if(key.startsWith('./host/'))delete pkg.exports[key];
+pkg.exports['./client']='./lib/client.js';
+pkg.files=['lib/index.js','lib/client.js','lib/engine.js','lib/runner.js','lib/mcp.js','lib/onboarding.js','lib/invite-client.mjs','lib/version.mjs','lib/接入说明.md','README.md','AGENT_INSTALL.md','scripts/agent-install.mjs','scripts/archive.mjs','cordis.patch.yml'];
+const client=path.join(lib,'client.js');
+fs.writeFileSync(client,fs.readFileSync(client,'utf8').replace(/id:'dsh-cross-harness-coordinator(?:-v[0-9-]+)?'/,`id:'${pkg.name}'`));
+fs.writeFileSync(path.join(root,'package.json'),JSON.stringify(pkg,null,2)+'\n');
+fs.writeFileSync(path.join(root,'cordis.patch.yml'),`- insert:\n    - id: cross-harness-coordinator\n      name: ${pkg.name}\n`);
+console.log(JSON.stringify({version:pkg.version,bundle:pkg.name}));
