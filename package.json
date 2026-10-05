@@ -1,0 +1,80 @@
+{
+  "name": "dsh-cross-harness-coordinator-v0-1-19",
+  "version": "0.1.19",
+  "description": "在一个 DSH 会话中分配跨 Harness 工作并审查真实产物",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/engine.js",
+    "lib/runner.js",
+    "lib/mcp.js",
+    "lib/onboarding.js",
+    "lib/invite-client.mjs",
+    "lib/version.mjs",
+    "lib/接入说明.md",
+    "README.md",
+    "AGENT_INSTALL.md",
+    "scripts/agent-install.mjs",
+    "scripts/archive.mjs",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node test/run.mjs",
+    "preview": "node test/preview.mjs",
+    "prepack": "node scripts/build-runtime.mjs",
+    "build": "node scripts/build-runtime.mjs",
+    "release": "node scripts/release.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-session"
+      ],
+      "external": [
+        "react"
+      ],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "license": "MIT",
+  "dshCoordinator": {
+    "canonicalName": "dsh-cross-harness-coordinator"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maiyumeka/dsh-cross-harness-coordinator.git"
+  },
+  "homepage": "https://github.com/Maiyumeka/dsh-cross-harness-coordinator#readme",
+  "bugs": {
+    "url": "https://github.com/Maiyumeka/dsh-cross-harness-coordinator/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vite": "8.3.1",
+    "playwright": "1.62.1"
+  }
+}

@@ -1,0 +1,16 @@
+node_modules/
+.npm-cache/
+dist/
+test-data/
+install-backups/
+update-backups/
+*-backups/
+local-data/
+docs/local-handoff/
+.local-install.json
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
