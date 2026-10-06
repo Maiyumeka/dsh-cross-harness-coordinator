@@ -1,6 +1,6 @@
 {
-  "name": "dsh-cross-harness-coordinator-v0-1-19",
-  "version": "0.1.19",
+  "name": "dsh-cross-harness-coordinator-v0-2-9",
+  "version": "0.2.9",
   "description": "在一个 DSH 会话中分配跨 Harness 工作并审查真实产物",
   "type": "module",
   "main": "lib/index.js",
@@ -14,20 +14,50 @@
     "lib/index.js",
     "lib/client.js",
     "lib/engine.js",
+    "lib/fingerprints.js",
+    "lib/version-probe.js",
+    "lib/time.js",
     "lib/runner.js",
     "lib/mcp.js",
+    "lib/bridges.js",
+    "lib/rpc.js",
+    "lib/native.js",
+    "lib/codex-approval.js",
+    "lib/run-log.js",
+    "lib/validation.js",
+    "lib/approval-context.js",
+    "lib/collect-image.js",
+    "lib/remote.js",
+    "lib/network.js",
+    "lib/delivery.js",
+    "lib/worker.mjs",
+    "lib/mcp-network.mjs",
+    "lib/claude-worker.mjs",
+    "lib/claude-worker.py",
     "lib/onboarding.js",
     "lib/invite-client.mjs",
     "lib/version.mjs",
     "lib/接入说明.md",
     "README.md",
     "AGENT_INSTALL.md",
+    "docs/BRIDGES.md",
+    "docs/ARCHITECTURE.md",
+    "docs/修复记录-0.2.1.md",
+    "docs/修复记录-0.2.2.md",
+    "docs/修复记录-0.2.3.md",
+    "docs/修复记录-0.2.4.md",
+    "docs/修复记录-0.2.5.md",
+    "docs/修复记录-0.2.6.md",
+    "docs/修复记录-0.2.7.md",
+    "docs/修复记录-0.2.8.md",
+    "docs/修复记录-0.2.9.md",
     "scripts/agent-install.mjs",
     "scripts/archive.mjs",
     "cordis.patch.yml"
   ],
   "scripts": {
     "test": "node test/run.mjs",
+    "test:stability": "node test/repeat-core.mjs",
     "preview": "node test/preview.mjs",
     "prepack": "node scripts/build-runtime.mjs",
     "build": "node scripts/build-runtime.mjs",
@@ -58,7 +88,11 @@
     "canonicalName": "dsh-cross-harness-coordinator"
   },
   "dependencies": {
-    "ajv": "8.20.0"
+    "ajv": "8.20.0",
+    "@a2a-js/sdk": "1.3.0",
+    "@grpc/grpc-js": "1.14.3",
+    "@bufbuild/protobuf": "2.11.0",
+    "@modelcontextprotocol/sdk": "1.32.0"
   },
   "repository": {
     "type": "git",
@@ -75,6 +109,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "vite": "8.3.1",
-    "playwright": "1.62.1"
+    "playwright": "1.62.1",
+    "express": "5.2.1",
+    "ws": "8.18.3"
   }
 }
