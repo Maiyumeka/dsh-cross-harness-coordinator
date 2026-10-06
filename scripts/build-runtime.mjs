@@ -8,7 +8,7 @@ pkg.dshCoordinator={canonicalName};
 fs.writeFileSync(path.join(lib,'version.mjs'),`export const VERSION=${JSON.stringify(pkg.version)};\n`);
 for(const key of Object.keys(pkg.exports))if(key.startsWith('./host/'))delete pkg.exports[key];
 pkg.exports['./client']='./lib/client.js';
-pkg.files=['lib/index.js','lib/client.js','lib/engine.js','lib/runner.js','lib/mcp.js','lib/onboarding.js','lib/invite-client.mjs','lib/version.mjs','lib/接入说明.md','README.md','AGENT_INSTALL.md','scripts/agent-install.mjs','scripts/archive.mjs','cordis.patch.yml'];
+pkg.files=['lib/index.js','lib/client.js','lib/engine.js','lib/fingerprints.js','lib/version-probe.js','lib/time.js','lib/runner.js','lib/mcp.js','lib/bridges.js','lib/rpc.js','lib/native.js','lib/codex-approval.js','lib/run-log.js','lib/validation.js','lib/approval-context.js','lib/collect-image.js','lib/remote.js','lib/network.js','lib/delivery.js','lib/worker.mjs','lib/mcp-network.mjs','lib/claude-worker.mjs','lib/claude-worker.py','lib/onboarding.js','lib/invite-client.mjs','lib/version.mjs','lib/接入说明.md','README.md','AGENT_INSTALL.md','docs/BRIDGES.md','docs/ARCHITECTURE.md','docs/修复记录-0.2.1.md','docs/修复记录-0.2.2.md','docs/修复记录-0.2.3.md','docs/修复记录-0.2.4.md','docs/修复记录-0.2.5.md','docs/修复记录-0.2.6.md','docs/修复记录-0.2.7.md','docs/修复记录-0.2.8.md','docs/修复记录-0.2.9.md','scripts/agent-install.mjs','scripts/archive.mjs','cordis.patch.yml'];
 const client=path.join(lib,'client.js');
 fs.writeFileSync(client,fs.readFileSync(client,'utf8').replace(/id:'dsh-cross-harness-coordinator(?:-v[0-9-]+)?'/,`id:'${pkg.name}'`));
 fs.writeFileSync(path.join(root,'package.json'),JSON.stringify(pkg,null,2)+'\n');

@@ -5,18 +5,44 @@ import {pathToFileURL} from 'node:url';
 import {packageFiles, sha256} from './archive.mjs';
 
 function readJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-function desktopVersion(asar) {
+function asarManifest(asar) {
   const fd = fs.openSync(asar, 'r');
   try {
     const header = Buffer.alloc(16); fs.readSync(fd, header, 0, 16, 0);
     const jsonSize = header.readUInt32LE(12), headerSize = header.readUInt32LE(4);
     if (jsonSize > 32 * 1024 * 1024 || jsonSize + 8 > headerSize) throw new Error('invalid ASAR header');
     const json = Buffer.alloc(jsonSize); fs.readSync(fd, json, 0, jsonSize, 16);
-    const entry = JSON.parse(json.toString()).files['package.json'];
-    if (!entry || entry.unpacked || entry.size > 1024 * 1024) throw new Error('invalid ASAR manifest');
-    const bytes = Buffer.alloc(entry.size); fs.readSync(fd, bytes, 0, bytes.length, 8 + headerSize + Number(entry.offset));
-    return JSON.parse(bytes.toString()).version;
-  } finally { fs.closeSync(fd); }
+    return {files: JSON.parse(json.toString()).files, fd, headerSize};
+  } catch (error) { fs.closeSync(fd); throw error; }
+}
+function asarEntry(manifest, entry) {
+  if (!entry || entry.unpacked || entry.size > 1024 * 1024) throw new Error('invalid ASAR manifest');
+  const bytes = Buffer.alloc(entry.size);
+  fs.readSync(manifest.fd, bytes, 0, bytes.length, 8 + manifest.headerSize + Number(entry.offset));
+  return bytes.toString();
+}
+function desktopVersion(asar) {
+  const manifest = asarManifest(asar);
+  try { return JSON.parse(asarEntry(manifest, manifest.files['package.json'])).version; }
+  finally { fs.closeSync(manifest.fd); }
+}
+/**
+ * The CLI that ships with the desktop harness lives inside the ASAR, so the disk entry recorded in
+ * the release manifest is only a launcher path. Anchor the runtime check on the ASAR, and treat the
+ * on-disk lookup as a weak signal: a real @deepseek-ai/dsh package there that disagrees is reported.
+ */
+function cliVersion(asar, cli) {
+  const manifest = asarManifest(asar);
+  try {
+    const nested = manifest.files?.dsh?.files?.node_modules?.files?.['@deepseek-ai']?.files?.dsh?.files?.['package.json'];
+    if (nested) return JSON.parse(asarEntry(manifest, nested)).version;
+  } finally { fs.closeSync(manifest.fd); }
+  if (!cli) return null;
+  const file = path.resolve(path.dirname(cli), '..', 'package.json');
+  if (!fs.existsSync(file)) return null;
+  const pkg = readJson(file);
+  if (pkg.name !== '@deepseek-ai/dsh') return null;
+  return pkg.version ?? null;
 }
 function sessionFiles(home) {
   const root = path.join(home, 'sessions'), ids = [];
@@ -45,9 +71,10 @@ export function check(options = {}) {
   if (JSON.stringify(hashes) !== JSON.stringify(release.files)) throw new Error('release file list mismatch');
   for (const lifecycle of ['preinstall', 'install', 'postinstall', 'prepare']) if (packed.manifest.scripts?.[lifecycle]) throw new Error('unexpected install script');
   if(!release.defaults.cli||!release.defaults.asar)throw new Error('请设置COORDINATOR_DSH_CLI与COORDINATOR_DSH_ASAR后重新生成发布清单；不会自动修改宿主配置');
-  const cliVersion = readJson(path.resolve(path.dirname(release.defaults.cli), '..', 'package.json')).version;
   const appVersion = desktopVersion(release.defaults.asar);
-  if (appVersion !== release.runtimeVersion || cliVersion !== appVersion) throw new Error(`runtime mismatch: desktop ${appVersion}, CLI ${cliVersion}, expected ${release.runtimeVersion}`);
+  const cli = cliVersion(release.defaults.asar, release.defaults.cli);
+  if (appVersion !== release.runtimeVersion) throw new Error(`runtime mismatch: desktop ${appVersion}, expected ${release.runtimeVersion}`);
+  if (cli && cli !== appVersion) throw new Error(`runtime mismatch: desktop ${appVersion}, CLI ${cli}, expected ${release.runtimeVersion}`);
   const manifest = readJson(path.join(profileDir, 'package.json'));
   const canonicalName=release.canonicalName??release.name,identities=[];
   for(const name of Object.keys(manifest.dependencies??{})){const file=path.join(profileDir,'node_modules',name,'package.json');if(!fs.existsSync(file))continue;const pkg=readJson(file);if(pkg.name===canonicalName||pkg.dshCoordinator?.canonicalName===canonicalName)identities.push({name,version:pkg.version});}
