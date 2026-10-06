@@ -6,6 +6,8 @@
 
 ## 本机发布资料
 
+`.local-install.json` 是被 Git 忽略的本机路径配置，不随仓库或 worktree 自动复制。新 worktree 构建发布资料前须有自己的配置，或设置 `COORDINATOR_DSH_CLI`、`COORDINATOR_DSH_ASAR`、`DSH_HOME`、`COORDINATOR_DSH_PROFILE` 等明确路径。可以核对后从本机主仓库复制已有配置；不要把该文件放进公开仓库。cli/asar 缺失时检查器会拒绝安装，先补齐并重新生成发布清单，不能绕过运行时检查。
+
 - 在工程根目录读取 `dist/agent-install.json` 获取当前安装包、SHA-256、固定验证的 DSH 版本和默认路径。以实际当前 DSH profile 为目标；工具操作的是当前 profile，不能用 desktop 的备份证明另一个 profile 的安装。
 - 检查器：`node scripts/agent-install.mjs check`。
 - 备份：同一检查器执行 `prepare`，保存返回的 backup 路径。默认读取 DSH_HOME，未设置时使用本机 desktop；实际 profile 不同时由你加 `--home` 与 `--profile`。用户不用填写。
@@ -23,7 +25,7 @@
 
 用户要求更新时，由你完成以下步骤，不要求用户退出 DSH。检查器 check 会返回 install/update、已安装版本及待处理任务；相同版本无需重复安装。
 
-1. 先使用当前会话 coordinator_status 和实际插件状态核对工作空闲；0.1.11 起还须核对 settings.activeConnections 为0，prepare 会拒绝正在检查 ACP/MCP 连接的执行端及尚在执行、停止中、排队或待审查的工作。不要擅自取消工作。需要暂停时用合法暂停流程并等待受管任务真正停止。保持其余会话和宿主运行。
+1. 先使用当前会话 coordinator_status 和实际插件状态核对工作空闲；0.1.11 起还须核对 settings.activeConnections 为0，prepare 会拒绝正在检查协议连接的执行端及尚在执行、停止中、排队或待审查的工作。不要擅自取消工作。需要暂停时用合法暂停流程并等待受管任务真正停止。保持其余会话和宿主运行。
 2. 读取目标发布资料，执行 check / prepare，备份配置、清单、锁文件和协调器状态。使用原生 plugin_manager install_bundle 安装目标包。
 3. 0.1.2 起使用独立版本包名（例如 dsh-cross-harness-coordinator-v0-1-2），发布资料中的 name 是目标 bundle；canonicalName 用于识别此前的协调器。先 install_bundle，target 为 archive，enabled:false，确认 application:applied；保留旧依赖作为恢复入口。随后对 prepare 返回的 previousBundles 逐一 set_bundle enabled:false，再对目标 name 执行 set_bundle enabled:true。每一步必须检查 application。只能切换本协调器，不修改其他插件，不卸载旧包。
 4. 独立包名让宿主和客户端都加载新版，避开 DSH 已缓存的旧代码。刷新 DSH 界面一次，让旧客户端重新绑定当前会话；这是刷新界面，不是退出应用。具备界面能力的 Agent 自己完成刷新并恢复原会话。如果目标安装或激活失败，不继续重复尝试；目标已激活则先停用目标，再恢复此前启用的 bundle 一次，记录结果并报告。restart-required 不能当作成功。

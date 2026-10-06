@@ -32,7 +32,7 @@ const run = async (file, tier) => {
 };
 
 // 核心：不依赖浏览器、外部服务或模型凭据，可在任意机器复现。
-for (const file of ['engine.mjs', 'artifact-guard.mjs', 'recover.mjs', 'onboarding.mjs', 'mcp.mjs', 'large-startup.mjs', 'onboarding-release.mjs']) {
+for (const file of ['engine.mjs', 'plan-validation.mjs', 'approval-disabled.mjs', 'artifact-guard.mjs', 'recover.mjs', 'onboarding.mjs', 'mcp.mjs', 'mcp-negotiation.mjs', 'mcp-budget.mjs', 'mainstream.mjs', 'codex-approval.mjs', 'codex-image-delivery.mjs', 'defects-0.2.1.mjs', 'task-history.mjs', 'large-startup.mjs', 'onboarding-release.mjs']) {
   await run(file, 'core');
 }
 

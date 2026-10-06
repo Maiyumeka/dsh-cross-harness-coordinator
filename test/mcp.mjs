@@ -45,7 +45,7 @@ try{
  engine.endpoint(a,definition('older','older'));assert.equal((await engine.connectEndpoint(a,'older')).connected,true);
  engine.endpoint(a,definition('callbacks','callbacks'));assert.equal((await engine.connectEndpoint(a,'callbacks')).connected,true);assert.equal(messages('callbacks').find(m=>m.id===901&&!m.method).result.roots[0].name,'当前工作区');assert.equal(messages('callbacks').find(m=>m.id===902&&!m.method).error.code,-32601);
  await assert.rejects(()=>engine.connectEndpoint({id:'other',cwd},id),/会话|登记/);
- assert.throws(()=>engine.endpoint(a,definition('http','normal',{...mapping,transport:'http'})),/stdio/);
+ assert.throws(()=>engine.endpoint(a,definition('http','normal',{...mapping,transport:'http'})),/入口|传输/);
  // Selection must match actual mapping, and concrete arguments are schema-checked before call.
  engine.endpoint(a,definition('invalid-static','normal',{...mapping,arguments:{...mapping.arguments,count:'not-an-integer'}}));assert.equal((await engine.connectEndpoint(a,'invalid-static')).connected,false);assert.match(engine.state.endpoints['invalid-static'].connection.error,/固定参数/);
  engine.endpoint(a,definition('invalid-args'));assert.equal((await engine.connectEndpoint(a,'invalid-args')).connected,true);
