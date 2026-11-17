@@ -21,6 +21,9 @@ const plan=async id=>{await cancel();return tools.get('coordinator_plan').execut
 const approve=()=>{const a=task().approvals.find(a=>a.state==='pending');return tools.get('coordinator_control').execute({action:'approval',id:task().id,approval_id:a.id,approval_version:a.version,decision:'accept'},exec);};
 try{
  const schemaModule=process.env.COORDINATOR_TEST_APPROVAL_MODULE?pathToFileURL(path.resolve(process.env.COORDINATOR_TEST_APPROVAL_MODULE)).href:'@deepseek-ai/dsh-user-approval',native=await import(schemaModule),real=Object.create(native.ApprovalService.prototype),log=[{type:'approval/policy',data:{policy:'never'}},{type:'turn/start'}],session={get seq(){return log.length},eventAt:i=>log[i],append:(type,data)=>log.push({type,data})};real.config={policy:'ask'};
+ // Modern hosts supply projected state during service initialization. This fixture
+ // bypasses construction, so provide the projection handle instead of replaying events.
+ real.approvalProjectionHandle={stateOf:()=>({policy:'never',turnOpen:true})};
  assert.equal(approvalContext(real,session).state,'disabled');assert.equal(await real.request({agent:{session},toolName:'fixture'}),'rejected');assert.deepEqual(log.slice(2).map(e=>e.type),['approval/asked','approval/decided']);assert.equal(approvalContext({request:()=>{},overrideOf:()=>undefined,config:{policy:'never'}},{}).state,'disabled');assert.equal(approvalContext({request:()=>{}},{}).state,'unknown');assert.equal(approvalContext(undefined,{}).state,'unavailable');
  coverage.push('桌面DSH审批服务的公开会话覆盖/default never策略可读取，真实never请求无答复者也直接rejected；不发探测审批');
  engine.endpoint(actor,{id:'peer',label:'fixture Codex',protocol:'codex',command:process.execPath,args:[path.resolve('test/codex-image-fixture.mjs'),'normal',source],launch_env:{CODEX_HOME:home}});assert.equal((await engine.connectEndpoint(actor,'peer')).connected,true);const initial=launches;

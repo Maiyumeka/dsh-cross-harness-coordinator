@@ -1,0 +1,88 @@
+{
+  "version": "0.2.11",
+  "testedHost": "0.2.2-rc.3",
+  "date": "2026-11-17",
+  "archive": "dsh-cross-harness-coordinator-v0-2-11-0.2.11.tgz",
+  "sha256": "3f2f6a9ba552bce3913ed19864a7da880d9dbb0f34b34c202d585da12bde4f59",
+  "passed": true,
+  "core": [
+    {
+      "file": "engine.mjs",
+      "passed": true
+    },
+    {
+      "file": "plan-validation.mjs",
+      "passed": true
+    },
+    {
+      "file": "approval-disabled.mjs",
+      "passed": true
+    },
+    {
+      "file": "artifact-guard.mjs",
+      "passed": true
+    },
+    {
+      "file": "recover.mjs",
+      "passed": true
+    },
+    {
+      "file": "onboarding.mjs",
+      "passed": true
+    },
+    {
+      "file": "mcp.mjs",
+      "passed": true
+    },
+    {
+      "file": "mcp-negotiation.mjs",
+      "passed": true
+    },
+    {
+      "file": "mcp-budget.mjs",
+      "passed": true
+    },
+    {
+      "file": "mainstream.mjs",
+      "passed": true
+    },
+    {
+      "file": "codex-approval.mjs",
+      "passed": true
+    },
+    {
+      "file": "codex-image-delivery.mjs",
+      "passed": true
+    },
+    {
+      "file": "defects-0.2.1.mjs",
+      "passed": true
+    },
+    {
+      "file": "task-history.mjs",
+      "passed": true
+    },
+    {
+      "file": "large-startup.mjs",
+      "passed": true
+    },
+    {
+      "file": "onboarding-release.mjs",
+      "passed": true
+    }
+  ],
+  "smoke": [
+    "真实宿主兼容检查接受 rc.3、rc.4 和 0.2.2，隔离下一个系列",
+    "真实加载器跳过旧候选包和缺失包，正常插件继续组装，配置字节保持一致",
+    "真实 defineTool 注册七项工具，设置 RPC、冷会话读取、释放和错误返回通过",
+    "插件卸载释放工具和引擎资源",
+    "设置页客户端注册、服务端渲染和样式清理通过"
+  ],
+  "packagedFilesVerified": 47,
+  "productionInstalled": false,
+  "limits": [
+    "隔离复制运行树的探针、SSR 冒烟和本地模拟协议回归",
+    "尚未执行正式桌面安装及交互验收",
+    "宿主升级隔离依据 0.2.2-rc.3 的实际加载器行为，未来加载器变更需重新核对"
+  ]
+}

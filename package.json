@@ -1,6 +1,6 @@
 {
-  "name": "dsh-cross-harness-coordinator-v0-2-9",
-  "version": "0.2.9",
+  "name": "dsh-cross-harness-coordinator-v0-2-11",
+  "version": "0.2.11",
   "description": "在一个 DSH 会话中分配跨 Harness 工作并审查真实产物",
   "type": "module",
   "main": "lib/index.js",
@@ -51,6 +51,8 @@
     "docs/修复记录-0.2.7.md",
     "docs/修复记录-0.2.8.md",
     "docs/修复记录-0.2.9.md",
+    "docs/补丁-审批不可用时的应对配方.md",
+    "docs/适配记录-0.2.11.md",
     "scripts/agent-install.mjs",
     "scripts/archive.mjs",
     "cordis.patch.yml"
@@ -69,7 +71,6 @@
     },
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-ui-slots",
         "@deepseek-ai/dsh-client-connection",
         "@deepseek-ai/dsh-client-ui-session"
       ],
@@ -80,12 +81,13 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
-    "@deepseek-ai/schemastery": "^3.18.1"
+    "@deepseek-ai/dsh-tools": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/schemastery": "^3.19.0"
   },
   "license": "MIT",
   "dshCoordinator": {
-    "canonicalName": "dsh-cross-harness-coordinator"
+    "canonicalName": "dsh-cross-harness-coordinator",
+    "runtimeVersion": "0.2.2-rc.3"
   },
   "dependencies": {
     "ajv": "8.20.0",
@@ -103,7 +105,8 @@
     "url": "https://github.com/Maiyumeka/dsh-cross-harness-coordinator/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "dsh": ">=0.2.2-rc.3 <0.2.3-0"
   },
   "devDependencies": {
     "react": "19.3.0",

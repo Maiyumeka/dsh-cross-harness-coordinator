@@ -37,6 +37,10 @@ for (const file of ['engine.mjs', 'plan-validation.mjs', 'approval-disabled.mjs'
 }
 
 // 深测：需要活的 DSH 页面或大文件来源；缺环境时报告跳过并给出所需变量。
+if (process.env.COORDINATOR_HOST_RUNTIME) {
+  await run('host-update-smoke.mjs', 'core');
+}
+
 if (deep) {
   for (const file of ['onboarding-ui.mjs', 'native-ui.mjs', 'native-large-startup.mjs', 'agent-install.mjs', 'agent-update.mjs', 'preview-ui.mjs']) {
     await run(file, 'deep');
