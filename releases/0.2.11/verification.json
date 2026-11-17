@@ -79,10 +79,15 @@
     "设置页客户端注册、服务端渲染和样式清理通过"
   ],
   "packagedFilesVerified": 47,
-  "productionInstalled": false,
+  "productionInstalled": true,
   "limits": [
     "隔离复制运行树的探针、SSR 冒烟和本地模拟协议回归",
-    "尚未执行正式桌面安装及交互验收",
     "宿主升级隔离依据 0.2.2-rc.3 的实际加载器行为，未来加载器变更需重新核对"
-  ]
+  ],
+  "userAcceptance": {
+    "status": "passed",
+    "source": "user-confirmation",
+    "confirmedOn": "2026-11-17",
+    "summary": "用户已确认正式桌面验收完成，测试通过。"
+  }
 }
