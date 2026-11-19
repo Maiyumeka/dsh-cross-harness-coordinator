@@ -3,6 +3,7 @@ import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {packageFiles, sha256} from './archive.mjs';
+import {assertHostCompatibility} from './host-compatibility.mjs';
 
 function readJson(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
 function asarManifest(asar) {
@@ -73,8 +74,8 @@ export function check(options = {}) {
   if(!release.defaults.cli||!release.defaults.asar)throw new Error('请设置COORDINATOR_DSH_CLI与COORDINATOR_DSH_ASAR后重新生成发布清单；不会自动修改宿主配置');
   const appVersion = desktopVersion(release.defaults.asar);
   const cli = cliVersion(release.defaults.asar, release.defaults.cli);
-  if (appVersion !== release.runtimeVersion) throw new Error(`runtime mismatch: desktop ${appVersion}, expected ${release.runtimeVersion}`);
-  if (cli && cli !== appVersion) throw new Error(`runtime mismatch: desktop ${appVersion}, CLI ${cli}, expected ${release.runtimeVersion}`);
+  assertHostCompatibility(appVersion, packed.manifest, release.runtimeVersion);
+  if (cli && cli !== appVersion) throw new Error(`runtime mismatch: desktop ${appVersion}, CLI ${cli}`);
   const manifest = readJson(path.join(profileDir, 'package.json'));
   const canonicalName=release.canonicalName??release.name,identities=[];
   for(const name of Object.keys(manifest.dependencies??{})){const file=path.join(profileDir,'node_modules',name,'package.json');if(!fs.existsSync(file))continue;const pkg=readJson(file);if(pkg.name===canonicalName||pkg.dshCoordinator?.canonicalName===canonicalName)identities.push({name,version:pkg.version});}

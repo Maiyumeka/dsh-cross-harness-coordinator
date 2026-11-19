@@ -3,6 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {check,prepare} from '../scripts/agent-install.mjs';
 import {sha256} from '../scripts/archive.mjs';
+import {assertHostCompatibility} from '../scripts/host-compatibility.mjs';
 const release=JSON.parse(fs.readFileSync(path.resolve('dist/agent-install.json'),'utf8'));
 const root=path.resolve('test-data','onboarding-release-'+Date.now()),home=path.join(root,'home'),profile=path.join(home,'profiles','desktop');fs.mkdirSync(profile,{recursive:true});
 const oldName='dsh-cross-harness-coordinator-v0-1-10',oldPackage=path.join(profile,'node_modules',oldName);fs.mkdirSync(oldPackage,{recursive:true});
@@ -18,7 +19,13 @@ writeCliVersion(release.runtimeVersion);
 function writeAsar(file,entries){
   const texts=entries.map(([,text])=>text),payloads=texts.map(text=>Buffer.from(text));
   const manifest={files:{}};let cursor=0;
-  entries.forEach(([name],index)=>{manifest.files[name]={size:payloads[index].length,offset:String(cursor)};cursor+=payloads[index].length;});
+  entries.forEach(([name],index)=>{
+    const segments=name.split('/'), file=segments.pop();
+    let dir=manifest;
+    for(const segment of segments)dir=dir.files[segment]??={files:{}};
+    dir.files[file]={size:payloads[index].length,offset:String(cursor)};
+    cursor+=payloads[index].length;
+  });
   const header=Buffer.from(JSON.stringify(manifest)),headerSize=header.length+8,total=payloads.reduce((sum,buffer)=>sum+buffer.length,0);
   const asar=Buffer.alloc(8+headerSize+total);
   asar.writeUInt32LE(headerSize,4);asar.writeUInt32LE(header.length,12);header.copy(asar,16);
@@ -43,9 +50,11 @@ coverage.push('asar 内嵌 CLI 版本作为运行时证据');
 writeRelease({defaults:{...releaseFor().defaults,cli:path.join(root,'not-a-cli','bin.js')}});
 assert.equal(check({home,profile:'desktop',release:releaseFile}).runtimeVersion,release.runtimeVersion);
 coverage.push('非 CLI 包的启动器路径不被当作运行时证据');
-writeCliVersion('0.0.0-stale');writeRelease();
-assert.throws(()=>check({home,profile:'desktop',release:releaseFile}),/runtime mismatch: desktop [^,]+, CLI 0\.0\.0-stale/);
-coverage.push('磁盘上真正不一致的 CLI 仍被拒绝');
+const mismatchedCli=path.join(root,'fixture-embedded-cli-mismatch.asar');
+writeAsar(mismatchedCli,[['package.json',desktop],['dsh/node_modules/@deepseek-ai/dsh/package.json',JSON.stringify({version:'0.2.2-rc.4'})]]);
+writeRelease({defaults:{...releaseFor().defaults,asar:mismatchedCli}});
+assert.throws(()=>check({home,profile:'desktop',release:releaseFile}),/runtime mismatch: desktop [^,]+, CLI 0\.2\.2-rc\.4/);
+coverage.push('桌面与内嵌 CLI 版本即使都在允许范围内，不一致仍被拒绝');
 writeCliVersion(release.runtimeVersion);
 writeRelease({defaults:{...releaseFor().defaults,asar:asarWithoutCli}});
 assert.equal(check({home,profile:'desktop',release:releaseFile}).runtimeVersion,release.runtimeVersion);
@@ -53,9 +62,23 @@ coverage.push('asar 无内嵌条目时回退到磁盘 CLI 版本');
 writeCliVersion('0.0.0-stale');
 assert.throws(()=>check({home,profile:'desktop',release:releaseFile}),/runtime mismatch/);
 coverage.push('回退路径同样拒绝不一致');
+for(const version of ['0.2.2-rc.3','0.2.2-rc.10','0.2.2','0.2.2+build.1','0.2.2-rc.2','0.2.3-0','0.2.3-rc.1','0.2.3']){
+  const fixtureAsar=path.join(root,'fixture-'+version+'.asar');
+  writeAsar(fixtureAsar,[['package.json',JSON.stringify({version})],['dsh/node_modules/@deepseek-ai/dsh/package.json',JSON.stringify({version})]]);
+  writeRelease({defaults:{...releaseFor().defaults,asar:fixtureAsar}});
+  if(['0.2.2-rc.3','0.2.2-rc.10','0.2.2','0.2.2+build.1'].includes(version)){
+    assert.equal(check({home,profile:'desktop',release:releaseFile}).runtimeVersion,version);
+  }else{
+    assert.throws(()=>check({home,profile:'desktop',release:releaseFile}),/runtime mismatch: desktop [^,]+, required/);
+  }
+}
+coverage.push('预检接受范围内的 RC 和稳定版，拒绝下界之前及下一系列');
 writeCliVersion(release.runtimeVersion);writeRelease({runtimeVersion:'0.0.0-wrong'});
-assert.throws(()=>check({home,profile:'desktop',release:releaseFile}),/runtime mismatch: desktop [^,]+, expected 0\.0\.0-wrong/);
-coverage.push('桌面版本与发布声明不一致时拒绝');
+assert.throws(()=>check({home,profile:'desktop',release:releaseFile}),/tested DSH version .* is outside compatibility range/);
+assert.doesNotThrow(()=>assertHostCompatibility('0.2.2-rc.3',{},'0.2.2-rc.3'));
+assert.throws(()=>assertHostCompatibility('0.2.2-rc.5',{},'0.2.2-rc.3'),/expected 0\.2\.2-rc\.3/);
+assert.throws(()=>assertHostCompatibility('0.2.2-rc.5',{engines:{dsh:'*'}},'0.2.2-rc.5'),/unsupported DSH compatibility range/);
+coverage.push('发布验收版本须在范围内，旧包保留精确检查，未知范围明确拒绝');
 writeRelease();
 assert.equal(checked.pendingConnections.length,1);const backupRoot=path.join(root,'backups');assert.throws(()=>prepare({home,profile:'desktop',backupRoot,release:releaseFile}),/协议连接检查尚未空闲/);assert.equal(fs.existsSync(backupRoot),false);
 coverage.push('ACP检查进行中禁止升级准备');

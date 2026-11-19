@@ -18,7 +18,7 @@ assert.equal(evaluatePluginCompatibility(pkg, {}, '0.2.2-rc.4'), undefined);
 assert.equal(evaluatePluginCompatibility(pkg, {}, '0.2.2'), undefined);
 assert.ok(evaluatePluginCompatibility(pkg, {}, '0.2.3-rc.1'));
 assert.ok(evaluatePluginCompatibility(pkg, {}, '0.3.0'));
-coverage.push('真实宿主兼容检查接受 rc.3、rc.4 和 0.2.2，隔离下一个系列');
+coverage.push('真实宿主兼容检查接受验收版本、rc.4 和 0.2.2，隔离下一个系列');
 
 const profile = path.join(root, 'profile');
 const write = (relative, value) => {

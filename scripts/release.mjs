@@ -2,14 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {packageFiles, sha256} from './archive.mjs';
+import {assertHostCompatibility} from './host-compatibility.mjs';
 const root = path.resolve(import.meta.dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
 const runtimeVersion = pkg.dshCoordinator?.runtimeVersion;
-if (!/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(runtimeVersion ?? '')) {
-  throw new Error('发布清单需要明确的 DSH 宿主版本');
-}
 const archive = path.join(root, 'dist', `${pkg.name}-${pkg.version}.tgz`);
 const contents = packageFiles(archive);
+assertHostCompatibility(runtimeVersion, contents.manifest, runtimeVersion);
 const localFile=path.join(root,'.local-install.json');
 const local=fs.existsSync(localFile)?JSON.parse(fs.readFileSync(localFile,'utf8')):{};
 const defaults={home:process.env.DSH_HOME||local.home||path.join(os.homedir(),'.dsh'),profile:process.env.COORDINATOR_DSH_PROFILE||local.profile||'desktop',cli:process.env.COORDINATOR_DSH_CLI||local.cli||'',asar:process.env.COORDINATOR_DSH_ASAR||local.asar||'',node:process.execPath,backupRoot:path.join(root,'install-backups')};

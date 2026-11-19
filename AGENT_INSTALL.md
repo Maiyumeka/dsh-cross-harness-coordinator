@@ -8,7 +8,7 @@
 
 `.local-install.json` 是被 Git 忽略的本机路径配置，不随仓库或 worktree 自动复制。新 worktree 构建发布资料前须有自己的配置，或设置 `COORDINATOR_DSH_CLI`、`COORDINATOR_DSH_ASAR`、`DSH_HOME`、`COORDINATOR_DSH_PROFILE` 等明确路径。可以核对后从本机主仓库复制已有配置；不要把该文件放进公开仓库。cli/asar 缺失时检查器会拒绝安装，先补齐并重新生成发布清单，不能绕过运行时检查。
 
-- 在工程根目录读取 `dist/agent-install.json` 获取当前安装包、SHA-256、固定验证的 DSH 版本和默认路径。以实际当前 DSH profile 为目标；工具操作的是当前 profile，不能用 desktop 的备份证明另一个 profile 的安装。
+- 在工程根目录读取 `dist/agent-install.json` 获取安装包、SHA-256、已验收的 DSH 版本和默认路径。安装预检按安装包内的 `engines.dsh` 范围判断，若能读到 CLI 版本则要求与桌面版一致。备份与安装须指向同一 profile。
 - 检查器：`node scripts/agent-install.mjs check`。
 - 备份：同一检查器执行 `prepare`，保存返回的 backup 路径。默认读取 DSH_HOME，未设置时使用本机 desktop；实际 profile 不同时由你加 `--home` 与 `--profile`。用户不用填写。
 - 备份保存 profile 顶层配置、清单、锁文件、宿主补丁和原会话文件清单；不复制会话正文，不是整个 DSH 数据目录的完整备份。安装服务不会迁移、删除会话。
@@ -19,7 +19,7 @@
 2. 确认没有会被修改影响的工作。首次安装不会重启 DSH；其他不受影响的会话可以保持打开。已有本插件升级时先检查协调任务空闲，不能关闭正在执行本安装的会话，也不能强制结束任何工作。
 3. 检查和备份通过后调用 `plugin_manager`：`action: install_bundle`，`target: 发布资料中的 archive`，`enabled: true`。这是 DSH 插件页使用的同一个安装服务，支持 live profile 热加载。
 4. 若本 Harness 没有该工具，但能操作 DSH 界面，使用 DSH 原生插件页的安装入口，粘贴同一个安装包路径并启用；这也是同一服务。不要读取浏览器私有数据、复制其他会话令牌或绕过认证。没有任何可用安装入口时，如实说明缺失能力，不能假报安装。
-5. 不自行批准新的包安装脚本或版本豁免。本插件没有安装生命周期脚本，目标宿主版本见发布清单的 `runtimeVersion`；遇到版本不兼容、权限拒绝、包构建授权、路径歧义或错误时报告宿主返回的具体原因。
+5. 不自行批准新的包安装脚本或版本豁免。本插件没有安装生命周期脚本。验收版本见发布清单的 `runtimeVersion`，兼容范围见包内的 `engines.dsh`。遇到版本不兼容、权限拒绝、包构建授权、路径歧义或错误时报告宿主返回的具体原因。
 
 ## Agent 自行更新（0.1.2 起）
 
